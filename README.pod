@@ -1,0 +1,12 @@
+=pod
+
+=encoding utf-8
+
+=head1 mping - Multiple ping
+
+=head1 Description
+
+mping is a sysadmin tool that allows You to simultaneously check multiple hosts
+for availability.
+
+=cut
