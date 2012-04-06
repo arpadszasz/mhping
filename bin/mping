@@ -1,0 +1,71 @@
+#!/usr/bin/env perl
+
+use 5.008008;
+use utf8;
+use warnings FATAL => 'all';
+use threads;
+use threads::shared;
+use Thread::Queue;
+use Time::HiRes qw(time);
+
+$|++;
+
+my $VERSION = 0.0001;
+
+my @hosts = qw(
+    localhost
+);
+
+my @workers;
+foreach my $host (@hosts) {
+    my $queue = Thread::Queue->new;
+    my $worker = threads->create( 'ping_host', $queue, $host );
+    push( @workers, { tid => $worker->tid, queue => $queue, host => $host } );
+}
+threads->create( 'show_report', \@workers )->join;
+
+exit 0;
+
+sub show_report {
+    my $workers = shift;
+
+    my $tty_clear = qx( clear );
+
+    while (1) {
+        print $tty_clear;
+        printf "%4s %-30s %10s \n", 'TID', 'Host', 'RTT';
+        print '-' x 46, "\n";
+
+        foreach my $worker ( @{$workers} ) {
+            my $message = $worker->{queue}->dequeue;
+            next unless $message;
+            printf "[%2d] %-30s %10s \n",
+              $worker->{tid}, $worker->{host}, $message;
+        }
+
+        sleep 1;
+    }
+
+    return;
+}
+
+sub ping_host {
+    my $job_queue = shift;
+    my $host      = shift;
+
+    open( my $ping, '-|', "ping $host 2>&1" );
+    while (<$ping>) {
+        my $message;
+        if (m/time=(.+)$/) {
+            $message = $1;
+        }
+        else {
+            $message = '?';
+        }
+        $job_queue->enqueue($message);
+    }
+
+    return;
+}
+
+# vim: set ts=4 sw=4 et:
