@@ -7,20 +7,21 @@ use threads;
 use threads::shared;
 use Thread::Queue;
 use Time::HiRes qw(time);
+use Data::Dumper;
 
 $|++;
 
-my $VERSION = 0.0001;
+my $VERSION = 0.001001;
 
 my @hosts = qw(
-    localhost
+  localhost
 );
 
 my @workers;
 foreach my $host (@hosts) {
     my $queue = Thread::Queue->new;
     my $worker = threads->create( 'ping_host', $queue, $host );
-    push( @workers, { tid => $worker->tid, queue => $queue, host => $host } );
+    push( @workers, { thread => $worker, queue => $queue, host => $host } );
 }
 threads->create( 'show_report', \@workers )->join;
 
@@ -37,10 +38,15 @@ sub show_report {
         print '-' x 46, "\n";
 
         foreach my $worker ( @{$workers} ) {
-            my $message = $worker->{queue}->dequeue;
-            next unless $message;
-            printf "[%2d] %-30s %10s \n",
-              $worker->{tid}, $worker->{host}, $message;
+            my $message;
+            if ( $worker->{thread}->is_running ) {
+                $message = $worker->{queue}->dequeue;
+
+                next unless $message;
+
+                printf "[%2d] %-30s %10s \n",
+                  $worker->{thread}->tid, $worker->{host}, $message;
+            }
         }
 
         sleep 1;
