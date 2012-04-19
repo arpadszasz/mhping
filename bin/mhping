@@ -19,10 +19,9 @@ GetOptions(
     'f|filename=s' => \$option{filename},
     'v|version'    => sub { show_version(); exit 0; },
     'h|help'       => sub { show_help(); exit 3; },
-);
+) or do { show_help(); exit 3; };
 
-my $hosts_file = $option{filename} or do { show_help(); exit 3; };
-my @hosts = parse_hosts($hosts_file);
+my @hosts = parse_hosts( $option{filename} );
 
 my @workers;
 foreach my $host (@hosts) {
@@ -36,7 +35,7 @@ exit 0;
 
 sub show_help {
     print <<HELP;
-Usage: mhping [options]
+Usage: mhping [options] [systems...]
     -f,--filename   read list of targets from a file
     -v,--version    show version
 HELP
@@ -54,13 +53,27 @@ VERSION
 
 sub parse_hosts {
     my $hosts_file = shift;
-    open( my $hosts_fh, '<', $hosts_file )
-      or die "Can't open file hosts file '$hosts_file'!\n";
+
+    return @ARGV if scalar @ARGV;
+
+    my $hosts_fh;
+    if ( not defined $hosts_file ) {
+        print "Write one host per line and end with CTRL-D.\n";
+        $hosts_fh = 'STDIN';
+    }
+    elsif ( $hosts_file eq '-' ) {
+        $hosts_fh = 'STDIN';
+    }
+    else {
+        open( my $hosts_fh, '<', $hosts_file )
+          or die "Can't open file hosts file '$hosts_file'!\n";
+    }
     my @hosts;
     while (<$hosts_fh>) {
         chomp;
         push( @hosts, $_ );
     }
+
     return @hosts;
 }
 

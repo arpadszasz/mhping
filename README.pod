@@ -8,12 +8,26 @@ mhping - Multiple host ping
 
 =head1 SYNOPSIS
 
-    mhping [options]
+    mhping [options] [systems...]
 
 =head1 DESCRIPTION
 
-mhping is a sysadmin tool that allows You to simultaneously check multiple hosts
-for availability.
+mhping is a sysadmin tool that allows You to simultaneously check multiple
+hosts for availability. Target hosts can be specified one per line in several
+ways (in order of precedence):
+
+=over 4
+
+=item 1.
+from command line
+
+=item 2.
+from stdin
+
+=item 3.
+from a file using the C<-f> option
+
+=back
 
 =head1 OPTIONS
 
@@ -21,7 +35,7 @@ for availability.
 
 =item -f, --filename
 
-Read list of targets from file. Targets should be specified one per line.
+Read list of targets from file or stdin if C<-> is specified as the filename.
 
 =item -h, --help
 
@@ -43,6 +57,9 @@ Please report bugs on github: L<https://github.com/arpadszasz/mhping/issues>
 
 =head1 SEE ALSO
 
+L<ping(8)>
+L<fping(8)>
+L<mtr(8)>
 L<threads>
 L<threads::shared>
 L<Thread::Queue>
