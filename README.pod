@@ -33,15 +33,19 @@ from a file using the C<-f> option
 
 =over 4
 
-=item -f, --filename
+=item B<-f, --filename> file
 
 Read list of targets from file or stdin if C<-> is specified as the filename.
 
-=item -h, --help
+=item B<-h, --help>
 
 Print usage message.
 
-=item -v, --version
+=item B<-i, --interval> number
+
+The minimum amount of time between sending ping packets. Default is 1 second.
+
+=item B<-v, --version>
 
 Print C<mhping> version information.
 

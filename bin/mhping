@@ -7,37 +7,45 @@ use threads;
 use threads::shared;
 use Thread::Queue;
 use Getopt::Long;
-use Time::HiRes qw(time);
+use Scalar::Util qw(looks_like_number);
+use Time::HiRes qw(sleep);
 
 $|++;
 
-my $VERSION = 0.002;
+my $VERSION = 0.003;
 
 my %option;
 Getopt::Long::Configure('bundling');
 GetOptions(
     'f|filename=s' => \$option{filename},
-    'v|version'    => sub { show_version(); exit 0; },
+    'i|interval=s' => \$option{interval},
     'h|help'       => sub { show_help(); exit 3; },
+    'v|version'    => sub { show_version(); exit 0; },
 ) or do { show_help(); exit 3; };
+
+if ( defined $option{interval} ) {
+    check_interval( $option{interval} ) or exit 3;
+}
 
 my @hosts = parse_hosts( $option{filename} );
 
 my @workers;
 foreach my $host (@hosts) {
     my $queue = Thread::Queue->new;
-    my $worker = threads->create( 'ping_host', $queue, $host );
+    my $worker
+      = threads->create( 'ping_host', $queue, $host, $option{interval} );
     push( @workers, { thread => $worker, queue => $queue, host => $host } );
 }
-threads->create( 'show_report', \@workers )->join;
+threads->create( 'show_report', \@workers, $option{interval} )->join;
 
 exit 0;
 
 sub show_help {
     print <<HELP;
 Usage: mhping [options] [systems...]
-    -f,--filename   read list of targets from a file
-    -v,--version    show version
+  -f,--filename file    read list of targets from a file
+  -i,--interval n       interval between sending ping packets (default: 1s)
+  -v,--version          show version
 HELP
 
     return;
@@ -51,6 +59,17 @@ VERSION
     return;
 }
 
+sub check_interval {
+    my $interval = shift;
+    if ( looks_like_number($interval) ) {
+        return 1;
+    }
+    else {
+        print "mhping: Bad timing interval!\n";
+        return;
+    }
+}
+
 sub parse_hosts {
     my $hosts_file = shift;
 
@@ -58,7 +77,7 @@ sub parse_hosts {
 
     my $hosts_fh;
     if ( not defined $hosts_file ) {
-        print "Write one host per line and end with CTRL-D.\n";
+        print "mhping: Write one host per line and end with CTRL-D.\n";
         $hosts_fh = 'STDIN';
     }
     elsif ( $hosts_file eq '-' ) {
@@ -66,7 +85,7 @@ sub parse_hosts {
     }
     else {
         open( my $hosts_fh, '<', $hosts_file )
-          or die "Can't open file hosts file '$hosts_file'!\n";
+          or die "mhping: Can't open file hosts file '$hosts_file'!\n";
     }
     my @hosts;
     while (<$hosts_fh>) {
@@ -79,6 +98,7 @@ sub parse_hosts {
 
 sub show_report {
     my $workers = shift;
+    my $interval = shift || 1;
 
     my $tty_clear = qx( clear );
 
@@ -99,7 +119,7 @@ sub show_report {
             }
         }
 
-        sleep 1;
+        sleep $interval;
     }
 
     return;
@@ -108,8 +128,9 @@ sub show_report {
 sub ping_host {
     my $job_queue = shift;
     my $host      = shift;
+    my $interval  = shift || 1;
 
-    open( my $ping, '-|', "ping $host 2>&1" );
+    open( my $ping, '-|', "ping -i $interval $host 2>&1" );
     while (<$ping>) {
         my $message;
         if (m/time=(.+)$/) {
