@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl -T
 
 use 5.008008;
 use utf8;
@@ -9,6 +9,10 @@ use Thread::Queue;
 use Getopt::Long;
 use Scalar::Util qw(looks_like_number);
 use Time::HiRes qw(sleep);
+
+BEGIN {
+    $ENV{PATH} = '/bin:/usr/bin';
+}
 
 $|++;
 
@@ -79,8 +83,8 @@ sub parse_hosts {
 
     my $hosts_fh;
     if ( not defined $hosts_file ) {
-        if (-t STDIN) {
-            print "mhping: Write one host per line and end with CTRL-D.\n"
+        if ( -t STDIN ) {
+            print "mhping: Write one host per line and end with CTRL-D.\n";
         }
         $hosts_fh = 'STDIN';
     }
@@ -156,6 +160,9 @@ sub ping_host {
     my $interval  = shift || 1;
 
     local $SIG{TERM} = sub { threads->exit };
+
+    $host     = ( $host     =~ /^([a-z0-9\.]+)$/i ) ? $1 : return;
+    $interval = ( $interval =~ /^([0-9\.]+)$/ )     ? $1 : return;
 
     open( my $ping, '-|', "ping -i $interval $host 2>&1" );
     while (<$ping>) {
