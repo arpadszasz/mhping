@@ -8,12 +8,16 @@ mhping - Multiple host ping
 
 =head1 SYNOPSIS
 
-    perl mhping
+    perl mhping hosts.cfg
 
 =head1 DESCRIPTION
 
 mhping is a sysadmin tool that allows You to simultaneously check multiple hosts
 for availability.
+
+=head1 HOSTS LIST
+
+Hosts must be provided one per line in a plain text file.
 
 =head1 BUGS
 

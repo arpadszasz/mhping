@@ -13,9 +13,8 @@ $|++;
 
 my $VERSION = 0.001001;
 
-my @hosts = qw(
-  localhost
-);
+my $hosts_file = $ARGV[0] or die "No hosts file specified!\n";
+my @hosts = parse_hosts($hosts_file);
 
 my @workers;
 foreach my $host (@hosts) {
@@ -26,6 +25,18 @@ foreach my $host (@hosts) {
 threads->create( 'show_report', \@workers )->join;
 
 exit 0;
+
+sub parse_hosts {
+    my $hosts_file = shift;
+    open( my $hosts_fh, '<', $hosts_file )
+      or die "Can't open file hosts file '$hosts_file'!\n";
+    my @hosts;
+    while (<$hosts_fh>) {
+        chomp;
+        push( @hosts, $_ );
+    }
+    return @hosts;
+}
 
 sub show_report {
     my $workers = shift;
