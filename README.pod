@@ -2,11 +2,31 @@
 
 =encoding utf-8
 
-=head1 mping - Multiple ping
+=head1 NAME
 
-=head1 Description
+mhping - Multiple host ping
 
-mping is a sysadmin tool that allows You to simultaneously check multiple hosts
+=head1 SYNOPSIS
+
+    perl mhping
+
+=head1 DESCRIPTION
+
+mhping is a sysadmin tool that allows You to simultaneously check multiple hosts
 for availability.
+
+=head1 BUGS
+
+Please report bugs on github: L<https://github.com/arpadszasz/mhping/issues>
+
+=head1 AUTHORS
+
+Árpád Szász
+
+=head1 SEE ALSO
+
+L<threads>
+L<threads::shared>
+L<Thread::Queue>
 
 =cut
