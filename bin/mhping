@@ -103,21 +103,36 @@ sub show_report {
     my $tty_clear = qx( clear );
 
     while (1) {
+        my @stats;
+        my $worker_count;
+        foreach my $worker ( @{$workers} ) {
+            my $host  = $worker->{host};
+            my $queue = $worker->{queue}->dequeue;
+
+            $worker_count++;
+
+            if ( $worker->{thread}->is_running ) {
+                next unless $queue->{message};
+
+                push(
+                    @stats,
+                    sprintf(
+                        "%2d %-30s %10s \n",
+                        $worker_count, $host, $queue->{message},
+                    )
+                );
+            }
+            elsif ( $queue->{status} eq 'BAD_HOST' ) {
+                terminate_all_threads();
+                print "mhping: Unknown host $host\n";
+                exit 3;
+            }
+        }
+
         print $tty_clear;
         printf "%2s %-30s %10s \n", '#', 'Host', 'RTT';
         print '-' x 46, "\n";
-
-        my $worker_count;
-        foreach my $worker ( @{$workers} ) {
-            my $message;
-            if ( $worker->{thread}->is_running ) {
-                $message = $worker->{queue}->dequeue;
-                next unless $message;
-                $worker_count++;
-                printf "%2d %-30s %10s \n",
-                  $worker_count, $worker->{host}, $message;
-            }
-        }
+        print foreach @stats;
 
         sleep $interval;
     }
@@ -130,16 +145,37 @@ sub ping_host {
     my $host      = shift;
     my $interval  = shift || 1;
 
+    local $SIG{TERM} = sub { threads->exit };
+
     open( my $ping, '-|', "ping -i $interval $host 2>&1" );
     while (<$ping>) {
+        my $status;
         my $message;
         if (m/time=(.+)$/) {
+            $status  = 'ECHO_REPLY';
             $message = $1;
         }
+        elsif (m/unknown\shost/) {
+            $status = 'BAD_HOST';
+        }
         else {
+            $status  = 'UNKNOWN';
             $message = '?';
         }
-        $job_queue->enqueue($message);
+        $job_queue->enqueue( { status => $status, message => $message } );
+    }
+
+    return;
+}
+
+sub terminate_all_threads {
+    foreach my $thread ( threads->list ) {
+        if ( $thread->is_running ) {
+            $thread->kill('SIGTERM')->detach;
+        }
+        else {
+            $thread->join;
+        }
     }
 
     return;
