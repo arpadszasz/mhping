@@ -29,6 +29,8 @@ if ( defined $option{interval} ) {
 
 my @hosts = parse_hosts( $option{filename} );
 
+exit 3 unless @hosts;
+
 my @workers;
 foreach my $host (@hosts) {
     my $queue = Thread::Queue->new;
@@ -92,7 +94,13 @@ sub parse_hosts {
     my @hosts;
     while (<$hosts_fh>) {
         chomp;
-        push( @hosts, $_ );
+        if (/^[a-z0-9\.]+$/i) {
+            push( @hosts, $_ );
+        }
+        else {
+            print "mhping: Bad host format $_\n";
+            return;
+        }
     }
 
     return @hosts;
