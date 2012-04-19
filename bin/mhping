@@ -34,18 +34,18 @@ sub show_report {
 
     while (1) {
         print $tty_clear;
-        printf "%4s %-30s %10s \n", 'TID', 'Host', 'RTT';
+        printf "%2s %-30s %10s \n", '#', 'Host', 'RTT';
         print '-' x 46, "\n";
 
+        my $worker_count;
         foreach my $worker ( @{$workers} ) {
             my $message;
             if ( $worker->{thread}->is_running ) {
                 $message = $worker->{queue}->dequeue;
-
                 next unless $message;
-
-                printf "[%2d] %-30s %10s \n",
-                  $worker->{thread}->tid, $worker->{host}, $message;
+                $worker_count++;
+                printf "%2d %-30s %10s \n",
+                  $worker_count, $worker->{host}, $message;
             }
         }
 
