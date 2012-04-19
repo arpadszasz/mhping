@@ -6,14 +6,22 @@ use warnings FATAL => 'all';
 use threads;
 use threads::shared;
 use Thread::Queue;
+use Getopt::Long;
 use Time::HiRes qw(time);
-use Data::Dumper;
 
 $|++;
 
-my $VERSION = 0.001001;
+my $VERSION = 0.002;
 
-my $hosts_file = $ARGV[0] or die "No hosts file specified!\n";
+my %option;
+Getopt::Long::Configure('bundling');
+GetOptions(
+    'f|filename=s' => \$option{filename},
+    'v|version'    => sub { show_version(); exit 0; },
+    'h|help'       => sub { show_help(); exit 3; },
+);
+
+my $hosts_file = $option{filename} or do { show_help(); exit 3; };
 my @hosts = parse_hosts($hosts_file);
 
 my @workers;
@@ -25,6 +33,24 @@ foreach my $host (@hosts) {
 threads->create( 'show_report', \@workers )->join;
 
 exit 0;
+
+sub show_help {
+    print <<HELP;
+Usage: mhping [options]
+    -f,--filename   read list of targets from a file
+    -v,--version    show version
+HELP
+
+    return;
+}
+
+sub show_version {
+    print <<VERSION;
+mhping : Version $VERSION
+VERSION
+
+    return;
+}
 
 sub parse_hosts {
     my $hosts_file = shift;
