@@ -97,7 +97,8 @@ sub parse_hosts {
     my $hosts_fh;
     if ( not defined $hosts_file ) {
         if ( -t STDIN ) {
-            print "mhping: Write one host per line and end with CTRL-D.\n";
+            print "mhping: Write one host per line. ";
+            print "End with CTRL-d or an empty line.\n";
         }
         $hosts_fh = 'STDIN';
     }
@@ -111,7 +112,10 @@ sub parse_hosts {
     my @hosts;
     while (<$hosts_fh>) {
         chomp;
-        if (/^[a-z0-9\.]+$/i) {
+        if (/^\s*$/) {
+            last;
+        }
+        elsif (/^[a-z0-9\.]+$/i) {
             push( @hosts, $_ );
         }
         else {
