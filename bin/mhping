@@ -135,7 +135,7 @@ sub show_report {
 
     my $display_count = 0;
     while (1) {
-        my @stats;
+        my @report_lines;
         my $worker_count;
         foreach my $worker ( @{$workers} ) {
             my $host = $worker->{host};
@@ -152,12 +152,15 @@ sub show_report {
 
             if ( $worker->{thread}->is_running ) {
                 $message = '-' if $status eq 'BLOCK' and $display_count >= 2;
+
+                my $line_format
+                  = looks_like_number($message)
+                  ? "%2d. %-30s %10.1f\n"
+                  : "%2d. %-30s %10s\n";
+
                 push(
-                    @stats,
-                    sprintf(
-                        "%2d %-30s %10s \n",
-                        $worker_count, $host, $message,
-                    )
+                    @report_lines,
+                    sprintf( $line_format, $worker_count, $host, $message )
                 );
             }
             elsif ( $status eq 'BAD_HOST' ) {
@@ -170,9 +173,9 @@ sub show_report {
         $display_count++;
 
         print $tty_clear;
-        printf "%2s %-30s %10s \n", '#', 'Host', 'RTT';
-        print '-' x 46, "\n";
-        print foreach @stats;
+        printf " %4s %39s\n", 'Host', 'Last';
+        print '-' x 45, "\n";
+        print foreach @report_lines;
 
         sleep $interval;
     }
@@ -195,7 +198,7 @@ sub ping_host {
     while (<$ping>) {
         my $status;
         my $message;
-        if (m/time=(.+)$/) {
+        if (m/time=(.+)\sms$/) {
             $status  = 'ECHO_REPLY';
             $message = $1;
         }
@@ -204,7 +207,7 @@ sub ping_host {
         }
         else {
             $status  = 'UNKNOWN';
-            $message = '?';
+            $message = '???';
         }
         $status_queue->enqueue($status);
         $message_queue->enqueue($message);
