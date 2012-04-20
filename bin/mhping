@@ -105,7 +105,7 @@ sub parse_hosts {
         $hosts_fh = 'STDIN';
     }
     else {
-        open( my $hosts_fh, '<', $hosts_file )
+        open( $hosts_fh, '<', $hosts_file )
           or die "mhping: Can't open file hosts file '$hosts_file'!\n";
     }
     my @hosts;
