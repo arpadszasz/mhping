@@ -51,6 +51,27 @@ Print C<mhping> version information.
 
 =back
 
+=head1 COMPATIBILITY
+
+This program requires Perl minimum version 5.8.8 with ithreads support to run.
+It has been tested on the following minimum setup:
+
+=over 4
+
+=item *
+Perl 5.8.8
+
+=item *
+threads 1.79
+
+=item *
+threads::shared 0.94
+
+=item *
+Thread::Queue 2.00
+
+=back
+
 =head1 BUGS
 
 Please report bugs on github: L<https://github.com/arpadszasz/mhping/issues>

@@ -37,10 +37,23 @@ exit 3 unless @hosts;
 
 my @workers;
 foreach my $host (@hosts) {
-    my $queue = Thread::Queue->new;
-    my $worker
-      = threads->create( 'ping_host', $queue, $host, $option{interval} );
-    push( @workers, { thread => $worker, queue => $queue, host => $host } );
+    my $status_queue  = Thread::Queue->new;
+    my $message_queue = Thread::Queue->new;
+    my $worker        = threads->create(
+        'ping_host',
+        $status_queue,
+        $message_queue,
+        $host,
+        $option{interval}
+    );
+    push(
+        @workers, {
+            thread        => $worker,
+            status_queue  => $status_queue,
+            message_queue => $message_queue,
+            host          => $host,
+        }
+    );
 }
 threads->create( 'show_report', \@workers, $option{interval} )->join;
 
@@ -120,23 +133,24 @@ sub show_report {
         my @stats;
         my $worker_count;
         foreach my $worker ( @{$workers} ) {
-            my $host  = $worker->{host};
-            my $queue = $worker->{queue}->dequeue;
+            my $host    = $worker->{host};
+            my $status  = $worker->{status_queue}->dequeue;
+            my $message = $worker->{message_queue}->dequeue;
 
             $worker_count++;
 
             if ( $worker->{thread}->is_running ) {
-                next unless $queue->{message};
+                next unless $message;
 
                 push(
                     @stats,
                     sprintf(
                         "%2d %-30s %10s \n",
-                        $worker_count, $host, $queue->{message},
+                        $worker_count, $host, $message,
                     )
                 );
             }
-            elsif ( $queue->{status} eq 'BAD_HOST' ) {
+            elsif ( $status eq 'BAD_HOST' ) {
                 terminate_all_threads();
                 print "mhping: Unknown host $host\n";
                 exit 3;
@@ -155,9 +169,10 @@ sub show_report {
 }
 
 sub ping_host {
-    my $job_queue = shift;
-    my $host      = shift;
-    my $interval  = shift || 1;
+    my $status_queue  = shift;
+    my $message_queue = shift;
+    my $host          = shift;
+    my $interval      = shift || 1;
 
     local $SIG{TERM} = sub { threads->exit };
 
@@ -179,7 +194,8 @@ sub ping_host {
             $status  = 'UNKNOWN';
             $message = '?';
         }
-        $job_queue->enqueue( { status => $status, message => $message } );
+        $status_queue->enqueue($status);
+        $message_queue->enqueue($message);
     }
 
     return;
