@@ -133,19 +133,25 @@ sub show_report {
 
     my $tty_clear = qx( clear );
 
+    my $display_count = 0;
     while (1) {
         my @stats;
         my $worker_count;
         foreach my $worker ( @{$workers} ) {
-            my $host    = $worker->{host};
-            my $status  = $worker->{status_queue}->dequeue;
-            my $message = $worker->{message_queue}->dequeue;
+            my $host = $worker->{host};
+            my $status
+              = $worker->{status_queue}->pending
+              ? $worker->{status_queue}->dequeue
+              : 'BLOCK';
+            my $message
+              = $worker->{message_queue}->pending
+              ? $worker->{message_queue}->dequeue
+              : '';
 
             $worker_count++;
 
             if ( $worker->{thread}->is_running ) {
-                next unless $message;
-
+                $message = '-' if $status eq 'BLOCK' and $display_count >= 2;
                 push(
                     @stats,
                     sprintf(
@@ -160,6 +166,8 @@ sub show_report {
                 exit 3;
             }
         }
+
+        $display_count++;
 
         print $tty_clear;
         printf "%2s %-30s %10s \n", '#', 'Host', 'RTT';
