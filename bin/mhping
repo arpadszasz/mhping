@@ -16,7 +16,7 @@ BEGIN {
 
 $|++;
 
-my $VERSION = 0.004;
+our $VERSION = 0.1;
 
 my %option;
 Getopt::Long::Configure('bundling');
