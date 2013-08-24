@@ -6,6 +6,15 @@
 
 mhping - Multiple host ping
 
+=begin HTML
+
+<p>
+	<img src="https://raw.github.com/arpadszasz/mhping/master/mhping.jpg"
+    width="507" height="214" alt="Screenshot of mhping" />
+</p>
+
+=end HTML
+
 =head1 SYNOPSIS
 
     mhping [options] [systems...]
