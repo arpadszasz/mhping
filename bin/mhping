@@ -16,7 +16,7 @@ BEGIN {
 
 $|++;
 
-my $VERSION = 0.003;
+my $VERSION = 0.004;
 
 my %option;
 Getopt::Long::Configure('bundling');
@@ -244,7 +244,7 @@ sub ping_host {
         my $status;
         my $count = 0;
         my $rtt;
-        if (m/icmp_seq=(\d+).+time=(.+)\sms$/) {
+        if (m/icmp_(?:req|seq)=(\d+).+time=(.+)\sms$/) {
             $status = 'ECHO_REPLY';
             $count  = $1;
             $rtt    = $2;
